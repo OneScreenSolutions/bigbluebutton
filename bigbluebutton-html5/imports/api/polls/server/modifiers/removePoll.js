@@ -12,7 +12,7 @@ export default function removePoll(meetingId, id) {
   };
 
   try {
-    const numberAffected = Polls.remove(selector);
+    // const numberAffected = Polls.remove(selector);
 
     if (numberAffected) {
       Logger.info(`Removed Poll id=${id}`);

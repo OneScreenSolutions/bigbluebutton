@@ -3,8 +3,10 @@ import Polls from '/imports/api/polls';
 import Logger from '/imports/startup/server/logger';
 import flat from 'flat';
 import { check } from 'meteor/check';
-
+import Service from '../service'
 export default function addPoll(meetingId, requesterId, poll, pollType, secretPoll, question = '') {
+
+  poll.answers = Service.checkCorrectAnswers(poll.answers)
   check(requesterId, String);
   check(meetingId, String);
   check(poll, {
@@ -13,6 +15,7 @@ export default function addPoll(meetingId, requesterId, poll, pollType, secretPo
       {
         id: Number,
         key: String,
+        isCorrect: Boolean
       },
     ],
     isMultipleResponse: Boolean,
@@ -38,6 +41,8 @@ export default function addPoll(meetingId, requesterId, poll, pollType, secretPo
     { meetingId },
     { requester: requesterId },
     { users: userIds },
+    {isPublished: false},
+    {created_at: new Date()},
     { question, pollType, secretPoll },
     flat(poll, { safe: true }),
   );

@@ -6,6 +6,7 @@ import Auth from '/imports/ui/services/auth';
 import Users from '/imports/api/users';
 import Meetings from '/imports/api/meetings';
 import { notify } from '/imports/ui/services/notification';
+import { makeCall } from '/imports/ui/services/api';
 import CaptionsContainer from '/imports/ui/components/captions/live/container';
 import CaptionsService from '/imports/ui/components/captions/service';
 import getFromUserSettings from '/imports/ui/services/users-settings';
@@ -173,7 +174,7 @@ export default injectIntl(withModalMounter(withTracker(({ intl, baseControls }) 
     randomlySelectedUser,
     layout,
   } = currentMeeting;
-
+  const currentPoll = makeCall('getPoll')
   if (currentUser && !currentUser.approved) {
     baseControls.updateLoadingState(intl.formatMessage(intlMessages.waitingApprovalMessage));
   }
@@ -211,6 +212,7 @@ export default injectIntl(withModalMounter(withTracker(({ intl, baseControls }) 
     meetingMuted: voiceProp.muteOnStart,
     currentUserEmoji: currentUserEmoji(currentUser),
     hasPublishedPoll: publishedPoll,
+    currentPoll: currentPoll,
     randomlySelectedUser,
     currentUserId: currentUser?.userId,
     currentUserRole: currentUser?.role,

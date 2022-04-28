@@ -25,7 +25,6 @@ export default function startPoll(pollTypes, pollType, pollId, secretPoll, quest
       question,
       isMultipleResponse,
     };
-
     if (pollType === pollTypes.Custom) {
       EVENT_NAME = 'StartCustomPollReqMsg';
       check(answers, Array);

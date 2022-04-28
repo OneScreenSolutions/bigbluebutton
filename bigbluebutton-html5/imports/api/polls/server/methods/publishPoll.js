@@ -14,12 +14,20 @@ export default function publishPoll() {
 
     check(meetingId, String);
     check(requesterUserId, String);
-
     const poll = Polls.findOne({ meetingId }); // TODO--send pollid from client
     if (!poll) {
       Logger.error(`Attempted to publish inexisting poll for meetingId: ${meetingId}`);
       return false;
     }
+    const selector = {
+      meetingId,
+      isPublished: false,
+    };
+  
+    const modifier = {
+      $set: {isPublished: true},
+    };
+    Polls.update(selector, modifier);
 
     RedisPubSub.publishUserMessage(
       CHANNEL,

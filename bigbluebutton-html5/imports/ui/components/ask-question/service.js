@@ -212,7 +212,7 @@ const checkPollType = (
 
 export default {
   pollTypes,
-  currentPoll: () => CurrentPoll.findOne({ meetingId: Auth.meetingID }),
+  currentPoll: () =>  CurrentPoll.findOne({ meetingId: Auth.meetingID, isPublished: false }),
   pollAnswerIds,
   POLL_AVATAR_COLOR,
   isDefaultPoll,

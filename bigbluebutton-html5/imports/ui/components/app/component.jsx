@@ -242,7 +242,10 @@ class App extends Component {
       pushLayoutToEveryone, // is layout pushed
       layoutContextDispatch,
       mountRandomUserModal,
+      currentUserId,
+      currentPoll
     } = this.props;
+    console.log("new props", this.props,"prev props", prevProps)
 
     if (meetingLayout !== prevProps.meetingLayout) {
       layoutContextDispatch({
@@ -304,9 +307,31 @@ class App extends Component {
       );
     }
     if (!prevProps.hasPublishedPoll && hasPublishedPoll) {
-      notify(
-        intl.formatMessage(intlMessages.pollPublishedLabel), 'info', 'polling',
-      );
+      // notify(
+      //   intl.formatMessage(intlMessages.pollPublishedLabel), 'info', 'polling',
+      // );
+      console.log("curr Poll", currentPoll,)
+      currentPoll.then((res) => {
+        const currPoll = res;
+        if(currPoll?.responses){
+          currPoll.responses.forEach((response) => {
+            if(response.userId === currentUserId){
+              let isCorrect = false
+              currPoll.answers.forEach((ans) => {
+                if(ans.isCorrect && response.answerIds.includes(ans.id)){
+                  isCorrect = true
+                  return notify(
+                    "You answer is correct", 'info', 'polling',
+                  );
+                }
+              })
+              !isCorrect && notify(
+                "Sorry! You answer is incorrect", 'info', 'polling',
+              );
+            }
+          })
+        }
+      })
     }
     if (prevProps.currentUserRole === VIEWER && currentUserRole === MODERATOR) {
       notify(

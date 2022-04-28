@@ -436,6 +436,7 @@ public:
   poll:
     enabled: true
     maxCustom: 5
+    correct_opt_symbol: "(*)"
     allowDragAndDropFile: false
     maxTypedAnswerLength: 45
     chatMessage: true

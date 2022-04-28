@@ -169,6 +169,7 @@ const MAX_CUSTOM_FIELDS = POLL_SETTINGS.maxCustom;
 const MAX_INPUT_CHARS = POLL_SETTINGS.maxTypedAnswerLength;
 const QUESTION_MAX_INPUT_CHARS = 1200;
 const MIN_OPTIONS_LENGTH = 2;
+const CORRECT_OPTION_SYMBOL = POLL_SETTINGS.correct_opt_symbol;
 
 const validateInput = (i) => {
   let _input = i;
@@ -179,17 +180,25 @@ const validateInput = (i) => {
 const isCorrectOption = (opt) => {
   const trimmedOption = opt.trim();
   const trimmedOptLength = trimmedOption.length
+  const correctOptSymLength = CORRECT_OPTION_SYMBOL.length
   return (
-    trimmedOptLength > 3 &&
-    trimmedOption.substring(trimmedOptLength - 3) === "(*)"
+    trimmedOptLength > correctOptSymLength &&
+    trimmedOption.substring(trimmedOptLength -
+    correctOptSymLength) === CORRECT_OPTION_SYMBOL
   )
 }
 
 const getCorrectOptions = (options) => {
   const correctOptions = []
+  let isCorrect = false;
   options.forEach((opt) => {
-    if (isCorrectOption(opt))
-      correctOptions.push(opt);
+    isCorrect = false
+    while(isCorrectOption(opt)){
+      opt = opt.substring(0,
+      opt.length - CORRECT_OPTION_SYMBOL.length)
+      isCorrect = true
+    }
+    isCorrect && correctOptions.push(opt)
   });
   return correctOptions;
 }
@@ -198,7 +207,7 @@ const verifiedOptionList = (optList) => {
   const newOptList = optList.map((o) => {
     const trimmedOpt = o.trim()
     // if (isCorrectOption(o)) {
-    //   return trimmedOpt.replace("(*)", "")
+    //   return trimmedOpt.replace(CORRECT_OPTION_SYMBOL, "")
     // }
     return trimmedOpt;
   })
@@ -218,7 +227,8 @@ const getSplittedQuestionAndOptions = (questionAndOptions) => {
 const checkIfAnyOptionIsEmpty = (options) => {
   let isOptionEmpty = false;
   options.forEach((opt) => {
-    if ((!opt.trim()) || (opt.trim().replace('(*)', '') === '')) {
+    if ((!opt.trim()) || 
+    (opt.trim().replace(CORRECT_OPTION_SYMBOL, '') === '')) {
       isOptionEmpty = true;
       return isOptionEmpty;
     }
@@ -231,7 +241,7 @@ class Poll extends Component {
     super(props);
 
     this.state = {
-      isPolling: false,
+      isQuestioning: false,
       question: '',
       questionAndOptions: '',
       optList: [],
@@ -284,7 +294,7 @@ class Poll extends Component {
   handleBackClick() {
     const { stopPoll } = this.props;
     this.setState({
-      isPolling: false,
+      isQuestioning: false,
       error: null,
     }, () => {
       stopPoll();
@@ -308,17 +318,24 @@ class Poll extends Component {
     const {
       optList, questionAndOptions, error
     } = this.state;
+    
     const list = [...optList];
     const validatedVal = validateInput(e.target.value).replace(/\s{2,}/g, ' ');
     const charsRemovedCount = e.target.value.length - validatedVal.length;
     const input = e.target;
     const caretStart = e.target.selectionStart;
     const caretEnd = e.target.selectionEnd;
-    list[index] = validatedVal
+    const valWithoutEsterik = validatedVal.substring(0,
+       validatedVal.length - CORRECT_OPTION_SYMBOL.length)
+    list[index] = isCorrectOption(validatedVal) ? valWithoutEsterik : validatedVal
     let questionAndOptionsList = [];
     if (questionAndOptions.length > 0) {
       questionAndOptionsList = questionAndOptions.split('\n');
-      questionAndOptionsList[index + 1] = validatedVal;
+      const modifiedOpt = questionAndOptionsList[index + 1]
+      if (isCorrectOption(modifiedOpt))
+        questionAndOptionsList[index + 1] = validatedVal.concat(CORRECT_OPTION_SYMBOL)
+      else
+        questionAndOptionsList[index + 1] = validatedVal
     }
     const newQuestionAndOptions = questionAndOptionsList.join('\n')
     let clearError = error && this.isAllErrorsCleared(newQuestionAndOptions)
@@ -344,6 +361,13 @@ class Poll extends Component {
     const validatedInput = validateInput(e.target.value);
     const { splittedQuestion, optionsList } =
       getSplittedQuestionAndOptions(validatedInput)
+    optionsList.forEach((opt, i) => {
+      if (isCorrectOption(opt)) {
+        const verifiedOpt = opt.substring(0, 
+        opt.length - CORRECT_OPTION_SYMBOL.length)
+        optionsList[i] = verifiedOpt
+      }
+    })
     let clearError = false
     if (error) clearError = this.isAllErrorsCleared(validatedInput);
     if (optionsList.length > MAX_CUSTOM_FIELDS) error = maxOptionsErrorMsg
@@ -384,27 +408,38 @@ class Poll extends Component {
 
   toogleCorrectOptionCheckBox(index) {
     const { intl } = this.props;
-    const { optList, error, question } = this.state
-    const optionsList = [...optList]
+    const { optList, error, question, questionAndOptions } = this.state
+    const optListArray = [...optList]
+    const { optionsList: options } = getSplittedQuestionAndOptions(questionAndOptions)
     const correctOptionErrorMsg = intl.formatMessage(
       intlMessages.correctOptionErr,
     );
-    const selectedOption = optionsList[index].trim()
+    const selectedOption = options[index].trim()
+    if (!selectedOption) {
+      this.setState({
+        error: intl.formatMessage(
+          intlMessages.optionEmptyError,
+        )
+      })
+      return null;
+    }
     const isCorrectOpt = isCorrectOption(selectedOption)
     if (!isCorrectOpt) {
-      optionsList[index] = selectedOption.concat("(*)")
+      options[index] = selectedOption.concat(CORRECT_OPTION_SYMBOL)
     }
     else {
-      optionsList[index] = selectedOption.slice(0, selectedOption.length - 3)
+      options[index] = selectedOption.slice(0, 
+      selectedOption.length - CORRECT_OPTION_SYMBOL.length)
+      optListArray[index] = options[index]
     }
-    const questionAndOptions = `${question}\n${optionsList.join('\n')}`
-    const correctOptions = getCorrectOptions(optionsList)
+    const questionAndOptionsString = `${question}\n${options.join('\n')}`
+    const correctOptions = getCorrectOptions(options)
     const clearError = (error === correctOptionErrorMsg
       && correctOptions.length > 0)
     this.setState({
-      optList: optionsList,
+      optList: optListArray,
       error: clearError ? null : error,
-      questionAndOptions
+      questionAndOptions: questionAndOptionsString
     })
   }
 
@@ -523,7 +558,7 @@ class Poll extends Component {
   isAllErrorsCleared(validatedInput) {
     const { intl } = this.props;
     const { error } = this.state;
-    const optionList = validatedInput.split('\n').slice(1)
+    const { optionsList: optionList } = getSplittedQuestionAndOptions(validatedInput)
     const correctOptions = getCorrectOptions(optionList)
     const maxOptionsErrorMsg = intl.formatMessage(
       intlMessages.maxOptionsLength,
@@ -581,10 +616,9 @@ class Poll extends Component {
       usernames,
       isDefaultPoll,
     } = this.props;
-
     return (
       <div>
-        <Styled.Instructions style={{textAlign:'justify'}}>
+        <Styled.Instructions style={{ textAlign: 'justify' }}>
           {intl.formatMessage(intlMessages.activePollInstruction)}
         </Styled.Instructions>
         <LiveResult
@@ -621,10 +655,10 @@ class Poll extends Component {
         <div>
           <Styled.PollQuestionArea
             hasError={hasQuestionError}
-            data-test="pollQuestionArea"
+            data-test="QuizQuestionArea"
             value={questionAndOptions}
             onChange={(e) => this.handleTextareaChange(e)}
-            rows="9"
+            rows="8"
             cols="35"
             maxLength={QUESTION_MAX_INPUT_CHARS}
             aria-label={intl.formatMessage(questionAndOptionsPlaceholderLabel)}
@@ -655,7 +689,7 @@ class Poll extends Component {
           {
             questionAndOptions && (
               <Styled.AddItemButton
-                data-test="addPollItem"
+                data-test="addQuestionOption"
                 label={intl.formatMessage(intlMessages.addOptionLabel)}
                 aria-describedby="add-item-button"
                 color="default"
@@ -699,6 +733,9 @@ class Poll extends Component {
           color="primary"
           onClick={() => {
             const { question, optList } = this.seperateQuestionsAndOptionsFromString();
+            const { questionAndOptions } = this.state
+            // const { optionsList } = getSplittedQuestionAndOptions(questionAndOptions)
+            // const correctOptions = getCorrectOptions(optionsList)
             // const answers = [];
             const verifiedQuestionType = 'CUSTOM';
             if (question && optList && !error) {
@@ -706,9 +743,10 @@ class Poll extends Component {
               //   answers.push({
               //     id: index,
               //     key: opt,
+              //     isCorrect: correctOptions.includes(opt)
               //   });
               // });
-              return this.setState({ isPolling: true, optList, question }, () => {
+              return this.setState({ isQuestioning: true, optList, question }, () => {
                 let verifiedOptions = verifiedOptionList(optList)
                 startCustomPoll(
                   verifiedQuestionType,
@@ -717,6 +755,7 @@ class Poll extends Component {
                     : questionAndOptions.split('\n')[0],
                   isMultipleResponse,
                   _.compact(verifiedOptions),
+                  // answers
                 );
               })
             }
@@ -739,7 +778,7 @@ class Poll extends Component {
         />
         {/* {
           FILE_DRAG_AND_DROP_ENABLED
-          && type !== pollTypes.Response
+          && type !== PollTypes.Response
           && this.renderDragDrop()
         } */}
       </div>
@@ -763,14 +802,13 @@ class Poll extends Component {
   }
 
   renderPollPanel() {
-    const { isPolling } = this.state;
+    // const { isQuestioning } = this.state;
     const {
       currentPoll,
       currentSlide,
     } = this.props;
-
     if (!currentSlide) return this.renderNoSlidePanel();
-    if (isPolling || currentPoll) {
+    if ( currentPoll && !currentPoll.isPublished ) {
       return this.renderActivePollOptions();
     }
 
@@ -779,13 +817,16 @@ class Poll extends Component {
 
   renderInputs() {
     const { intl } = this.props;
-    const { optList, error } = this.state;
-    const correctOptions = getCorrectOptions(optList)
+    const { optList, error, questionAndOptions } = this.state;
+    const { optionsList } = getSplittedQuestionAndOptions(questionAndOptions)
+    const correctOptions = getCorrectOptions(optionsList)
     const emptyOptionErrorMsg = intl.formatMessage(
       intlMessages.optionEmptyError,
     );
     return optList.slice(0, MAX_CUSTOM_FIELDS).map((o, i) => {
       const pollOptionKey = `poll-option-${i}`;
+      const option = isCorrectOption(o) ? o.substring(0,
+         o.length - CORRECT_OPTION_SYMBOL.length) : o
       return (
         <span key={pollOptionKey}>
           <div
@@ -801,12 +842,12 @@ class Poll extends Component {
               data-test="pollOptionItem"
               onChange={(e) => this.handleInputChange(e, i)}
               maxLength={MAX_INPUT_CHARS}
-              isCorrect={correctOptions.includes(o)}
+              isCorrect={correctOptions.includes(option)}
             />
             <Styled.PollCheckbox>
               <Checkbox
                 onChange={() => this.toogleCorrectOptionCheckBox(i)}
-                checked={correctOptions.includes(o)}
+                checked={correctOptions.includes(option)}
                 ariaLabelledBy="optionsCheckboxLabel"
               />
             </Styled.PollCheckbox>
@@ -832,7 +873,7 @@ class Poll extends Component {
                 { 0: (o || intl.formatMessage(intlMessages.emptyPollOpt)) })}
             </span>
           </div>
-          {(!o.trim() || (o.trim().replace('(*)', '') === ''))
+          {(!o.trim() || (o.trim().replace(CORRECT_OPTION_SYMBOL, '') === ''))
             && error === emptyOptionErrorMsg ? (
             <Styled.InputError>{error}</Styled.InputError>
           ) : (
@@ -850,8 +891,9 @@ class Poll extends Component {
       currentPoll,
       layoutContextDispatch,
     } = this.props;
-    const { question, openPreviewModal, optList } = this.state;
-    const correctOptions = getCorrectOptions(optList)
+    const { question, openPreviewModal, optList, questionAndOptions } = this.state;
+    const { optionsList } = getSplittedQuestionAndOptions(questionAndOptions)
+    const correctOptions = getCorrectOptions(optionsList)
     return (
       <div>
         <Styled.Header>
@@ -892,13 +934,13 @@ class Poll extends Component {
             icon="close"
             size="sm"
             hideLabel
-            data-test="closePolling"
+            data-test="closeQuestioning"
           />
         </Styled.Header>
         {this.renderPollPanel()}
-        <span className="sr-only" id="poll-config-button">{intl.formatMessage(intlMessages.showRespDesc)}</span>
+        <span className="sr-only" id="Poll-config-button">{intl.formatMessage(intlMessages.showRespDesc)}</span>
         <span className="sr-only" id="add-item-button">{intl.formatMessage(intlMessages.addRespDesc)}</span>
-        <span className="sr-only" id="start-poll-button">{intl.formatMessage(intlMessages.startPollDesc)}</span>
+        <span className="sr-only" id="start-Poll-button">{intl.formatMessage(intlMessages.startPollDesc)}</span>
 
         {/* Modal To Preview Question */}
         <Modal
@@ -920,19 +962,22 @@ class Poll extends Component {
             <Styled.ModalHeading>
               {intl.formatMessage(intlMessages.optionsLabel)}
             </Styled.ModalHeading>
-            <ul style={{listStyle:'none'}}>
+            <ul style={{ listStyle: 'none' }}>
               {optList
                 ? optList.map((opt, index) => {
                   const uniqueKey = `opt-list-question-${index}`;
+                  const option = isCorrectOption(opt) ? opt.substring(0, 
+                    opt.length - CORRECT_OPTION_SYMBOL.length) : opt
                   return (
-                    <Styled.OptionListItem key={uniqueKey} isCorrect={isCorrectOption(opt)}>
-                      {`${index+1}.  `}
-                      {!correctOptions.includes(opt) ? (
+                    <Styled.OptionListItem key={uniqueKey} 
+                    isCorrect={correctOptions.includes(option)}>
+                      {`${index + 1}.  `}
+                      {!correctOptions.includes(option) ? (
                         opt
                       ) : (
                         <span>
                           {' '}
-                          {opt.trim().substring(0,opt.length - 3)}
+                          {option}
                           {' '}
                           <strong>
                             {' '}

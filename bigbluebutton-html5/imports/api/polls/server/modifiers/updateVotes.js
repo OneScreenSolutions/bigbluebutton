@@ -2,8 +2,10 @@ import Polls from '/imports/api/polls';
 import { check } from 'meteor/check';
 import Logger from '/imports/startup/server/logger';
 import flat from 'flat';
+import Service from '../service'
 
 export default function updateVotes(poll, meetingId) {
+  poll.answers = Service.checkCorrectAnswers(poll.answers)
   check(meetingId, String);
   check(poll, Object);
 
