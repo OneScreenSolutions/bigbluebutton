@@ -4,10 +4,14 @@ import _ from 'lodash';
 import fastdom from 'fastdom';
 import { injectIntl } from 'react-intl';
 import ChatLogger from '/imports/ui/components/chat/chat-logger/ChatLogger';
+import Styled from './styles';
+import Modal from '/imports/ui/components/common/modal/simple/component';
+import Chart from "react-apexcharts";
 
 const propTypes = {
   text: PropTypes.string.isRequired,
   time: PropTypes.number.isRequired,
+  pollResultData: PropTypes.object,
   lastReadMessageTime: PropTypes.number,
   handleReadMessage: PropTypes.func.isRequired,
   scrollArea: PropTypes.instanceOf(Element),
@@ -40,7 +44,9 @@ class MessageChatItem extends PureComponent {
     super(props);
 
     this.ticking = false;
-
+    this.state = {
+      isOpenStatsPreviewModal: false,
+    }
     this.handleMessageInViewport = _.debounce(this.handleMessageInViewport.bind(this), 50);
   }
 
@@ -116,6 +122,111 @@ class MessageChatItem extends PureComponent {
     }
   }
 
+  pollStatsModal() {
+    const { isOpenStatsPreviewModal } = this.state
+    const { pollResultData } = this.props
+    const options = [];
+    const votesOfOptions = [];
+    const question = pollResultData?.questionText
+    pollResultData.answers.forEach((opt) => {
+      options.push(opt.key)
+      votesOfOptions.push(opt.numVotes)
+    })
+    const chartData = {
+      series: [{
+        data: votesOfOptions
+      }],
+      options: {
+        chart: {
+          height: 350,
+          type: 'bar',
+          events: {
+            click: function (chart, w, e) {
+              // console.log(chart, w, e)
+            }
+          }
+        },
+        colors: ['#F44336', '#E91E63', '#9C27B0'],
+        plotOptions: {
+          bar: {
+            columnWidth: '45%',
+            distributed: true,
+          }
+        },
+        dataLabels: {
+          enabled: false
+        },
+        legend: {
+          show: false
+        },
+        xaxis: {
+          categories: options,
+          labels: {
+            // formatter: function (value) {
+            //   if(value.length > 20)
+            //     return `${value.substring(0,20)}...`;
+            //   return value
+            // },
+            trim: true,
+            style: {
+              colors: ['#F44336', '#E91E63', '#9C27B0'],
+              fontSize: '14px',
+            }
+          },
+          title: {
+            text: question.length > 60 ? `${question.substring(0,60)}...` : question,
+            trim: true,
+            align: 'left',
+            margin:3,
+            // offsetX: 0,
+            // offsetY: -330,
+            floating: true,
+            style: {
+              fontSize:  '15px',
+              fontWeight:  'normal',
+              color:  '#263238',
+              textAnchor:'middle'
+            },
+          },
+        },
+        yaxis: [
+          {
+            labels: {
+              formatter: function (val) {
+                return val.toFixed(0);
+              }
+            },
+          },
+        ]
+      },
+      
+    }
+    console.log("////////////////inside modal", isOpenStatsPreviewModal, "poll extra", pollResultData)
+    return (
+
+      <Modal
+        isOpen={isOpenStatsPreviewModal}
+        onRequestClose={() => {
+          this.setState({
+            isOpenStatsPreviewModal: false
+          })
+        }}
+        hideBorder
+        data-test="pollStatsModal"
+        title={"Poll Stats"}
+      >
+        <Styled.PreviewModalContainer>
+          {/* <Styled.ModalHeading>
+            {pollResultData.questionText}
+          </Styled.ModalHeading> */}
+          <Chart options={chartData.options} series={chartData.series} type="bar" height={350} />
+
+        </Styled.PreviewModalContainer>
+      </Modal>
+
+    )
+  }
+
   // depending on whether the message is in viewport or not,
   // either read it or attach a listener
   listenToUnreadMessages() {
@@ -160,15 +271,36 @@ class MessageChatItem extends PureComponent {
       color,
     } = this.props;
     ChatLogger.debug('MessageChatItem::render', this.props);
+    console.log("type", type, "------props", this.props)
     if (type === 'poll') {
+      console.log(" inside poll")
       return (
-        <p
-          className={className}
-          style={{ borderLeft: `3px ${color} solid`, whiteSpace: 'pre-wrap' }}
-          ref={(ref) => { this.text = ref; }}
-          dangerouslySetInnerHTML={{ __html: text }}
-          data-test="chatPollMessageText"
-        />
+        <div style={{ borderLeft: `3px ${color} solid`, }}>
+          {this.pollStatsModal()}
+          <p
+            className={className}
+            style={{
+              whiteSpace: 'pre-wrap',
+              borderBottomLeftRadius: 0, borderBottomRightRadius: 0
+            }}
+            ref={(ref) => { this.text = ref; }}
+            dangerouslySetInnerHTML={{ __html: text }}
+            data-test="chatPollMessageText"
+          />
+
+          <Styled.DownloadPollStatsButton
+            label={"View Stats"}
+            aria-describedby="download-stats-button"
+            color="default"
+            onClick={() => {
+              console.log("download poll in chat clicked")
+              this.setState({
+                isOpenStatsPreviewModal: true
+              })
+            }
+            }
+          />
+        </div>
       );
     } else {
       return (

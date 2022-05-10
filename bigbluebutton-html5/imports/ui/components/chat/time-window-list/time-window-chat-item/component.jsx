@@ -231,7 +231,7 @@ class TimeWindowChatItem extends PureComponent {
       lastReadMessageTime,
       handleReadMessage,
     } = this.props;
-
+    console.log("------------poll result extra", this.props)
     const dateTime = new Date(timestamp);
 
     return messages ? (
@@ -257,6 +257,7 @@ class TimeWindowChatItem extends PureComponent {
             <Styled.PollMessageChatItem
               type="poll"
               key={messages[0].id}
+              pollResultData={extra.pollResultData}
               text={getPollResultString(extra.pollResultData, intl)}
               time={messages[0].time}
               chatAreaId={chatAreaId}

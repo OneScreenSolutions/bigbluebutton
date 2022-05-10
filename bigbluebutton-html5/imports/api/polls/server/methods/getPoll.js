@@ -11,7 +11,7 @@ export default function getPoll() {
 
     const poll = Polls.findOne({ meetingId }, { sort: { 'created_at' : -1 }}) // TODO--send pollid from client
     if (!poll) {
-      Logger.error(`No poll found in meetingId: ${meetingId}`);
+      Logger.info(`No poll found in meetingId: ${meetingId}`);
       return false;
     }
     Logger.info(`Poll found in meetingId: ${meetingId}`);
