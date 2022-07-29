@@ -76,10 +76,10 @@ class TimeWindowChatItem extends PureComponent {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { height, forceCacheUpdate, systemMessage, index } = this.props;
+    const { height, forceCacheUpdate, index } = this.props;
     const elementHeight = this.itemRef ? this.itemRef.clientHeight : null;
 
-    if (systemMessage && elementHeight && height !== 'auto' && elementHeight !== height && this.state.forcedUpdateCount < 10) {
+    if (elementHeight && height !== 'auto' && elementHeight !== height && this.state.forcedUpdateCount < 10) {
       // forceCacheUpdate() internally calls forceUpdate(), so we need a stop flag
       // and cannot rely on shouldComponentUpdate() and other comparisons.
       forceCacheUpdate(index);
@@ -166,13 +166,15 @@ class TimeWindowChatItem extends PureComponent {
     } = this.props;
 
     const dateTime = new Date(timestamp);
-    const regEx = /<a[^>]+>/i;
     ChatLogger.debug('TimeWindowChatItem::renderMessageItem', this.props);
     const defaultAvatarString = name?.toLowerCase().slice(0, 2) || "  ";
     const emphasizedText = messageFromModerator && CHAT_EMPHASIZE_TEXT && chatId === CHAT_PUBLIC_ID;
 
     return (
-      <Styled.Item key={`time-window-${messageKey}`}>
+      <Styled.Item
+        key={`time-window-${messageKey}`}
+        ref={element => this.itemRef = element}
+      >
         <Styled.Wrapper isSystemSender={isSystemSender}>
           <Styled.AvatarWrapper>
             <UserAvatar
@@ -202,7 +204,6 @@ class TimeWindowChatItem extends PureComponent {
             <Styled.Messages>
               {messages.map(message => (
                 <Styled.ChatItem
-                  hasLink={regEx.test(message.text)}
                   emphasizedMessage={emphasizedText}
                   key={message.id}
                   text={message.text}
@@ -244,6 +245,9 @@ class TimeWindowChatItem extends PureComponent {
       chatAreaId,
       lastReadMessageTime,
       handleReadMessage,
+      dispatch,
+      read,
+      chatId,
     } = this.props;
 
     const dateTime = new Date(timestamp);
@@ -275,7 +279,19 @@ class TimeWindowChatItem extends PureComponent {
               time={messages[0].time}
               chatAreaId={chatAreaId}
               lastReadMessageTime={lastReadMessageTime}
-              handleReadMessage={handleReadMessage}
+              handleReadMessage={(timestamp) => {
+                handleReadMessage(timestamp);
+
+                if (!read) {
+                  dispatch({
+                    type: 'last_read_message_timestamp_changed',
+                    value: {
+                      chatId,
+                      timestamp,
+                    },
+                  });
+                }
+              }}
               scrollArea={scrollArea}
               color={color}
             />
@@ -362,11 +378,7 @@ class TimeWindowChatItem extends PureComponent {
       return this.renderSystemMessage();
     }
 
-    return (
-      <Styled.Item>
-        {this.renderMessageItem()}
-      </Styled.Item>
-    );
+    return this.renderMessageItem();
   }
 }
 

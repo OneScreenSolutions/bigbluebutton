@@ -7,6 +7,7 @@ import ScreenshareButtonContainer from '/imports/ui/components/actions-bar/scree
 import AudioControlsContainer from '../audio/audio-controls/container';
 import JoinVideoOptionsContainer from '../video-provider/video-button/container';
 import PresentationOptionsContainer from './presentation-options/component';
+import Button from '/imports/ui/components/common/button/component';
 
 class ActionsBar extends PureComponent {
   render() {
@@ -14,8 +15,8 @@ class ActionsBar extends PureComponent {
       amIPresenter,
       amIModerator,
       enableVideo,
-      isLayoutSwapped,
-      toggleSwapLayout,
+      presentationIsOpen,
+      setPresentationIsOpen,
       handleTakePresenter,
       intl,
       isSharingVideo,
@@ -35,7 +36,9 @@ class ActionsBar extends PureComponent {
       shortcuts,
       layoutContextDispatch,
       actionsBarStyle,
-      isOldMinimizeButtonEnabled,
+      setMeetingLayout,
+      showPushLayout,
+      setPushLayout,
     } = this.props;
 
     return (
@@ -58,7 +61,11 @@ class ActionsBar extends PureComponent {
             isSharingVideo,
             stopExternalVideoShare,
             isMeteorConnected,
-            isQuestioningEnabled
+            isQuestioningEnabled,
+            setMeetingLayout,
+            setPushLayout,
+            presentationIsOpen,
+            showPushLayout,
           }}
           />
           {isCaptionsAvailable
@@ -81,22 +88,17 @@ class ActionsBar extends PureComponent {
           />
         </Styled.Center>
         <Styled.Right>
-          {!isOldMinimizeButtonEnabled ||
-            (isOldMinimizeButtonEnabled && isLayoutSwapped && !isPresentationDisabled)
-            ? (
-              <PresentationOptionsContainer
-                isLayoutSwapped={isLayoutSwapped}
-                toggleSwapLayout={toggleSwapLayout}
-                layoutContextDispatch={layoutContextDispatch}
-                hasPresentation={isThereCurrentPresentation}
-                hasExternalVideo={isSharingVideo}
-                hasScreenshare={hasScreenshare}
-              />
-            )
-            : null}
+          <PresentationOptionsContainer
+            presentationIsOpen={presentationIsOpen}
+            setPresentationIsOpen={setPresentationIsOpen}
+            layoutContextDispatch={layoutContextDispatch}
+            hasPresentation={isThereCurrentPresentation}
+            hasExternalVideo={isSharingVideo}
+            hasScreenshare={hasScreenshare}
+          />
           {isRaiseHandButtonEnabled
             ? (
-              <Styled.RaiseHandButton
+              <Button
                 icon="hand"
                 label={intl.formatMessage({
                   id: `app.actionsBar.emojiMenu.${

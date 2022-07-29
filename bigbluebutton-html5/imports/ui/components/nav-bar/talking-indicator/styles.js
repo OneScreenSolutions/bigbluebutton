@@ -21,7 +21,7 @@ import {
   fontSizeXS,
   fontSizeSmaller,
 } from '/imports/ui/stylesheets/styled-components/typography';
-import { phoneLandscape, smallOnly } from '/imports/ui/stylesheets/styled-components/breakpoints';
+import { phoneLandscape } from '/imports/ui/stylesheets/styled-components/breakpoints';
 import Button from '/imports/ui/components/common/button/component';
 
 const TalkingIndicatorButton = styled(Button)`
@@ -45,7 +45,7 @@ const TalkingIndicatorButton = styled(Button)`
   @media ${phoneLandscape} {
     height: 1rem;
   }
-  
+
   i,
   span {
     position: relative;
@@ -92,7 +92,7 @@ const TalkingIndicatorButton = styled(Button)`
     opacity: 1;
   }
 
-  ${({ spoke }) => spoke && `
+  ${({ $spoke }) => $spoke && `
     opacity: ${spokeOpacity};
 
     [dir="rtl"]  & {
@@ -100,15 +100,15 @@ const TalkingIndicatorButton = styled(Button)`
     }
   `}
 
-  ${({ muted }) => muted && `
+  ${({ $muted }) => $muted && `
     cursor: default;
-  
+
     i {
       background-color: ${colorDanger};
     }
   `}
 
-  ${({ isViewer }) => isViewer && `
+  ${({ $isViewer }) => $isViewer && `
     cursor: default;
   `}
 `;

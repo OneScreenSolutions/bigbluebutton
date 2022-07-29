@@ -48,6 +48,7 @@ const SidebarContent = (props) => {
     resizableEdge,
     contextDispatch,
     sidebarContentPanel,
+    amIPresenter,
   } = props;
 
   const [resizableWidth, setResizableWidth] = useState(width);
@@ -123,6 +124,10 @@ const SidebarContent = (props) => {
         zIndex,
         width,
         height,
+      }}
+      handleStyles={{
+        left: { height: '100vh' },
+        right: { height: '100vh' },
       }}
     >
       {sidebarContentPanel === PANELS.CHAT
