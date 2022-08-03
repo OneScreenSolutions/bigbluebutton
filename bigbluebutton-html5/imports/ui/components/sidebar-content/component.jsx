@@ -48,6 +48,7 @@ const SidebarContent = (props) => {
     resizableEdge,
     contextDispatch,
     sidebarContentPanel,
+    amIPresenter,
   } = props;
 
   const [resizableWidth, setResizableWidth] = useState(width);
@@ -124,30 +125,34 @@ const SidebarContent = (props) => {
         width,
         height,
       }}
+      handleStyles={{
+        left: { height: '100vh' },
+        right: { height: '100vh' },
+      }}
     >
       {sidebarContentPanel === PANELS.CHAT
-        && (
-          <ErrorBoundary
-            Fallback={FallbackView}
-          >
-            <ChatContainer />
-          </ErrorBoundary>
-        )}
+      && (
+      <ErrorBoundary
+        Fallback={FallbackView}
+      >
+        <ChatContainer width={width}/>
+      </ErrorBoundary>
+      )}
       {sidebarContentPanel === PANELS.SHARED_NOTES && <NotesContainer />}
       {sidebarContentPanel === PANELS.CAPTIONS && <CaptionsContainer />}
       {sidebarContentPanel === PANELS.BREAKOUT && <BreakoutRoomContainer />}
       {sidebarContentPanel === PANELS.WAITING_USERS && <WaitingUsersPanel />}
       {
         sidebarContentPanel === PANELS.POLL && (
-          <Styled.Poll style={{ minWidth, top: '0', display: pollDisplay }} id="pollPanel">
-            <PollContainer smallSidebar={smallSidebar} />
-          </Styled.Poll>
+        <Styled.Poll style={{ minWidth, top: '0', display: pollDisplay }} id="pollPanel">
+          <PollContainer smallSidebar={smallSidebar} amIPresenter={amIPresenter} />
+        </Styled.Poll>
         )
       }
       {
         sidebarContentPanel === PANELS.ASK_QUESTION && (
           <Styled.Quiz style={{ minWidth, top: '0', display: questionQuizDisplay }} id="questionQuizPanel">
-            <QuestionQuizContainer smallSidebar={smallSidebar} />
+            <QuestionQuizContainer smallSidebar={smallSidebar} amIPresenter={amIPresenter} />
           </Styled.Quiz>
         )
       }

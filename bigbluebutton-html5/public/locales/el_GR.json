@@ -160,7 +160,6 @@
     "app.presentation.options.fullscreen": "Πλήρης οθόνη",
     "app.presentation.options.exitFullscreen": "Έξοδος από πλήρη οθόνη",
     "app.presentation.options.minimize": "Ελαχιστοποίηση",
-    "app.presentation.options.snapshot": "Στιγμιότυπο της τρέχουσας παρουσίασης",
     "app.presentation.options.downloading": "Λήψη...",
     "app.presentation.options.downloaded": "Έγινε λήψη της τρέχουσας παρουσίασης",
     "app.presentation.options.downloadFailed": "Δεν μπορεί να γίνει λήψη της τρέχουσας παρουσίασης",
@@ -435,7 +434,6 @@
     "app.settings.main.save.label.description": "Αποθήκευση αλλαγών και κλείσιμο του μενού ρυθμίσεων",
     "app.settings.dataSavingTab.label": "Εξοικονόμηση δεδομένων",
     "app.settings.dataSavingTab.webcam": "Ενεργοποίηση καμερών",
-    "app.settings.dataSavingTab.screenShare": "Ενεργοποίηση διαμοιρασμού οθόνης",
     "app.settings.dataSavingTab.description": "Για καλύτερη διαχείριση της ταχύτητάς σας, επιλέξτε τι θα εμφανίζεται.",
     "app.settings.save-notification.label": "Οι ρυθμίσεις έχουν αποθηκευτεί",
     "app.statusNotifier.lowerHands": "Να κατέβουν τα χέρια",
@@ -452,7 +450,6 @@
     "app.actionsBar.actionsDropdown.presentationLabel": "Διαχείριση παρουσιάσεων",
     "app.actionsBar.actionsDropdown.initPollLabel": "Ξεκινήστε μια δημοσκόπηση",
     "app.actionsBar.actionsDropdown.desktopShareLabel": "Διαμοιρασμός της οθόνης σας",
-    "app.actionsBar.actionsDropdown.lockedDesktopShareLabel": "Ο διαμοιρασμός οθόνης είναι κλειδωμένος",
     "app.actionsBar.actionsDropdown.stopDesktopShareLabel": "Τερματισμός διαμοιρασμού οθόνης",
     "app.actionsBar.actionsDropdown.presentationDesc": "Ανέβασμα της παρουσίασής σας",
     "app.actionsBar.actionsDropdown.initPollDesc": "Ξεκινήστε μια δημοσκόπηση",
@@ -518,7 +515,6 @@
     "app.breakoutJoinConfirmation.freeJoinMessage": "Επιλέξτε ένα υπο-δωμάτιο (breakout) για συμμετοχή",
     "app.breakoutTimeRemainingMessage": "Χρόνος υπο-δωματίου (breakout) που απομένει: {0}",
     "app.breakoutWillCloseMessage": "Ο χρόνος τελείωσε.  Το υπο-δωμάτιο (breakout) θα κλείσει σύντομα.",
-    "app.breakout.dropdown.manageDuration": "Διαχείριση διάρκειας",
     "app.calculatingBreakoutTimeRemaining": "Υπολογισμός υπόλοιπου χρόνου ...",
     "app.audioModal.ariaTitle": "Συμμετοχή με τυπικό ήχο",
     "app.audioModal.microphoneLabel": "Μικρόφωνο",
@@ -699,7 +695,6 @@
     "app.lock-viewers.button.apply": "Εφαρμογή",
     "app.lock-viewers.button.cancel": "Ακύρωση",
     "app.lock-viewers.locked": "Κλειδωμένο",
-    "app.lock-viewers.unlocked": "Μη Κλειδωμένο",
     "app.guest-policy.ariaTitle": "Τυπικές ρυθμίσεις πολιτικής για επισκέπτη",
     "app.guest-policy.title": "Πολιτική επισκεπτών",
     "app.guest-policy.description": "Αλλαγή ρυθμίσεων πολιτικής συνεδρίας για επισκέπτη",
@@ -996,13 +991,9 @@
     "app.learningDashboard.statusTimelineTable.thumbnail": "Μικρογραφία παρουσίασης",
     "app.learningDashboard.errors.invalidToken": "Μη έγκυρο αναγνωριστικό σύνδεσης",
     "app.learningDashboard.errors.dataUnavailable": "Τα δεδομένα δεν είναι πλέον διαθέσιμα",
-    "mobileApp.portals.list.add.button.label": "Νέα πύλη",
     "mobileApp.portals.fields.name.label": "Όνομα πύλης",
     "mobileApp.portals.fields.name.placeholder": "Δοκιμή BigBlueButton",
-    "mobileApp.portals.fields.url.label": "URL διακομιστή",
-    "mobileApp.portals.addPortalPopup.confirm.button.label": "Προσθήκη πύλης",
-    "mobileApp.portals.addPortalPopup.validation.emptyFilds": "Κενά πεδία",
-    "mobileApp.portals.addPortalPopup.validation.portalNameAlreadyExists": "Το όνομα υπάρχει ήδη"
+    "mobileApp.portals.fields.url.label": "URL διακομιστή"
 
 }
 

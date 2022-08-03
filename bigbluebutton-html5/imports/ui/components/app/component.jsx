@@ -22,11 +22,11 @@ import BannerBarContainer from '/imports/ui/components/banner-bar/container';
 import WaitingNotifierContainer from '/imports/ui/components/waiting-users/alert/container';
 import LockNotifier from '/imports/ui/components/lock-viewers/notify/container';
 import StatusNotifier from '/imports/ui/components/status-notifier/container';
-import MediaService from '/imports/ui/components/media/service';
 import ManyWebcamsNotifier from '/imports/ui/components/video-provider/many-users-notify/container';
 import UploaderContainer from '/imports/ui/components/presentation/presentation-uploader/container';
 import CaptionsSpeechContainer from '/imports/ui/components/captions/speech/container';
 import RandomUserSelectContainer from '/imports/ui/components/common/modal/random-user/container';
+import ScreenReaderAlertContainer from '../screenreader-alert/container';
 import NewWebcamContainer from '../webcam/container';
 import PresentationAreaContainer from '../presentation/presentation-area/container';
 import ScreenshareContainer from '../screenshare/container';
@@ -46,6 +46,7 @@ import Settings from '/imports/ui/services/settings';
 import LayoutService from '/imports/ui/components/layout/service';
 import { registerTitleView } from '/imports/utils/dom-utils';
 import GlobalStyles from '/imports/ui/stylesheets/styled-components/globalStyles';
+import MediaService from '/imports/ui/components/media/service';
 
 const MOBILE_MEDIA = 'only screen and (max-width: 40em)';
 const APP_CONFIG = Meteor.settings.public.app;
@@ -174,6 +175,9 @@ class App extends Component {
       settingsLayout,
       isRTL,
       hidePresentation,
+      autoSwapLayout,
+      shouldShowScreenshare,
+      shouldShowExternalVideo,
     } = this.props;
     const { browserName } = browserInfo;
     const { osName } = deviceInfo;
@@ -185,12 +189,18 @@ class App extends Component {
       value: isRTL,
     });
 
+    const presentationOpen = !(autoSwapLayout || hidePresentation)
+      || shouldShowExternalVideo || shouldShowScreenshare;
+
     layoutContextDispatch({
       type: ACTIONS.SET_PRESENTATION_IS_OPEN,
-      value: !hidePresentation,
+      value: presentationOpen,
     });
 
-    MediaService.setSwapLayout(layoutContextDispatch);
+    if (!presentationOpen && !MediaService.getSwapLayout()) {
+      MediaService.setSwapLayout(layoutContextDispatch);
+    }
+
     Modal.setAppElement('#app');
 
     const fontSize = isMobile() ? MOBILE_FONT_SIZE : DESKTOP_FONT_SIZE;
@@ -520,6 +530,7 @@ class App extends Component {
         >
           {this.renderActivityCheck()}
           {this.renderUserInformation()}
+          <ScreenReaderAlertContainer />
           <BannerBarContainer />
           <NotificationsBarContainer />
           <SidebarNavigationContainer />

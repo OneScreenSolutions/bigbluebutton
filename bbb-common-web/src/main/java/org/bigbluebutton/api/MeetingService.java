@@ -60,6 +60,7 @@ import org.bigbluebutton.api.messaging.converters.messages.DeletedRecordingMessa
 import org.bigbluebutton.api.messaging.messages.*;
 import org.bigbluebutton.api2.IBbbWebApiGWApp;
 import org.bigbluebutton.api2.domain.UploadedTrack;
+import org.bigbluebutton.common2.msgs.MeetingCreatedEvtMsg;
 import org.bigbluebutton.common2.redis.RedisStorageService;
 import org.bigbluebutton.presentation.PresentationUrlDownloadService;
 import org.bigbluebutton.presentation.imp.SwfSlidesGenerationProgressNotifier;
@@ -412,7 +413,7 @@ public class MeetingService implements MessageListener {
             formatPrettyDate(m.getCreateTime()), m.isBreakout(), m.getSequence(), m.isFreeJoin(), m.getMetadata(),
             m.getGuestPolicy(), m.getAuthenticatedGuest(), m.getMeetingLayout(), m.getWelcomeMessageTemplate(), m.getWelcomeMessage(), m.getModeratorOnlyMessage(),
             m.getDialNumber(), m.getMaxUsers(),
-            m.getMeetingExpireIfNoUserJoinedInMinutes(), m.getmeetingExpireWhenLastUserLeftInMinutes(),
+            m.getMeetingExpireIfNoUserJoinedInMinutes(), m.getMeetingExpireWhenLastUserLeftInMinutes(),
             m.getUserInactivityInspectTimerInMinutes(), m.getUserInactivityThresholdInMinutes(),
             m.getUserActivitySignResponseDelayInMinutes(), m.getEndWhenNoModerator(), m.getEndWhenNoModeratorDelayInMinutes(),
             m.getMuteOnStart(), m.getAllowModsToUnmuteUsers(), m.getAllowModsToEjectCameras(), m.getMeetingKeepEvents(),

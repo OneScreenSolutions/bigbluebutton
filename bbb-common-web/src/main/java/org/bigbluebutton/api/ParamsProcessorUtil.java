@@ -118,8 +118,8 @@ public class ParamsProcessorUtil {
     private Long maxPresentationFileUpload = 30000000L; // 30MB
 
     private Integer clientLogoutTimerInMinutes = 0;
-  	private Integer meetingExpireIfNoUserJoinedInMinutes = 5;
-  	private Integer meetingExpireWhenLastUserLeftInMinutes = 1;
+    private Integer defaultMeetingExpireIfNoUserJoinedInMinutes = 5;
+    private Integer defaultMeetingExpireWhenLastUserLeftInMinutes = 1;
   	private Integer userInactivityInspectTimerInMinutes = 120;
   	private Integer userInactivityThresholdInMinutes = 30;
     private Integer userActivitySignResponseDelayInMinutes = 5;
@@ -560,6 +560,24 @@ public class ParamsProcessorUtil {
             }
         }
 
+        Integer meetingExpireIfNoUserJoinedInMinutes = defaultMeetingExpireIfNoUserJoinedInMinutes;
+        if (!StringUtils.isEmpty(params.get(ApiParams.MEETING_EXPIRE_IF_NO_USER_JOINED_IN_MINUTES))) {
+            try {
+                meetingExpireIfNoUserJoinedInMinutes = Integer.parseInt(params.get(ApiParams.MEETING_EXPIRE_IF_NO_USER_JOINED_IN_MINUTES));
+            } catch (NumberFormatException e) {
+                log.warn("Invalid param [meetingExpireIfNoUserJoinedInMinutes] for meeting=[{}]", internalMeetingId);
+            }
+        }
+
+        Integer meetingExpireWhenLastUserLeftInMinutes = defaultMeetingExpireWhenLastUserLeftInMinutes;
+        if (!StringUtils.isEmpty(params.get(ApiParams.MEETING_EXPIRE_WHEN_LAST_USER_LEFT_IN_MINUTES))) {
+            try {
+                meetingExpireWhenLastUserLeftInMinutes = Integer.parseInt(params.get(ApiParams.MEETING_EXPIRE_WHEN_LAST_USER_LEFT_IN_MINUTES));
+            } catch (NumberFormatException e) {
+                log.warn("Invalid param [meetingExpireWhenLastUserLeftInMinutes] for meeting=[{}]", internalMeetingId);
+            }
+        }
+
         boolean endWhenNoModerator = defaultEndWhenNoModerator;
         if (!StringUtils.isEmpty(params.get(ApiParams.END_WHEN_NO_MODERATOR))) {
           try {
@@ -799,11 +817,11 @@ public class ParamsProcessorUtil {
 		return DigestUtils.sha1Hex(extMeetingId);
 	}
 
-	public String processPassword(String pass) {
-		return StringUtils.isEmpty(pass) ? RandomStringUtils.randomAlphanumeric(8) : pass;
-	}
+    public String processPassword(String pass) {
+        return StringUtils.isEmpty(pass) ? RandomStringUtils.randomAlphanumeric(8) : pass;
+    }
 
-	public boolean hasChecksumAndQueryString(String checksum, String queryString) {
+    public boolean hasChecksumAndQueryString(String checksum, String queryString) {
 		return (! StringUtils.isEmpty(checksum) && StringUtils.isEmpty(queryString));
 	}
 
@@ -1134,15 +1152,11 @@ public class ParamsProcessorUtil {
 	}
 
 	public void setMeetingExpireWhenLastUserLeftInMinutes(Integer value) {
-		meetingExpireWhenLastUserLeftInMinutes = value;
-	}
-
-	public Integer getmeetingExpireWhenLastUserLeftInMinutes() {
-		return meetingExpireWhenLastUserLeftInMinutes;
+        defaultMeetingExpireWhenLastUserLeftInMinutes = value;
 	}
 
 	public void setMeetingExpireIfNoUserJoinedInMinutes(Integer value) {
-		meetingExpireIfNoUserJoinedInMinutes = value;
+        defaultMeetingExpireIfNoUserJoinedInMinutes = value;
 	}
 
 	public Integer getUserInactivityInspectTimerInMinutes() {

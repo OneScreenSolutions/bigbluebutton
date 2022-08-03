@@ -44,30 +44,6 @@ cp cron.daily/* staging/etc/cron.daily
 mkdir -p staging/etc/cron.hourly
 cp cron.hourly/bbb-resync-freeswitch staging/etc/cron.hourly
 
-# Overrides 
-
-mkdir -p staging/etc/systemd/system/bbb-apps-akka.service.d
-cat > staging/etc/systemd/system/bbb-apps-akka.service.d/override.conf <<HERE
-[Unit]
-Wants=redis-server.service
-After=redis-server.service
-HERE
-
-mkdir -p staging/etc/systemd/system/bbb-fsesl-akka.service.d
-cat > staging/etc/systemd/system/bbb-fsesl-akka.service.d/override.conf <<HERE
-[Unit]
-Wants=redis-server.service
-After=redis-server.service
-HERE
-
-
-mkdir -p staging/etc/systemd/system/bbb-transcode-akka.service.d
-cat > staging/etc/systemd/system/bbb-transcode-akka.service.d/override.conf <<HERE
-[Unit]
-Wants=redis-server.service
-After=redis-server.service
-HERE
-
 
 . ./opts-$DISTRO.sh
 
@@ -78,4 +54,5 @@ fpm -s dir -C ./staging -n $PACKAGE \
     --after-install after-install.sh \
     --description "BigBlueButton configuration utilities" \
     $DIRECTORIES \
-    $OPTS
+    $OPTS \
+    -d 'yq (>= 3)' -d 'yq (<< 4)'

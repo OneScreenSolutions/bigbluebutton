@@ -274,7 +274,7 @@ usage() {
     echo "Configuration:"
     echo "   --version                        Display BigBlueButton version (packages)"
     echo "   --setip <IP/hostname>            Set IP/hostname for BigBlueButton"
-    echo "   --setsecret <secret>             Change the shared secret in bigbluebutton.properties"
+    echo "   --setsecret <secret>             Change the shared secret in /etc/bigbluebutton/bbb-web.properties"
     echo
     echo "Monitoring:"
     echo "   --check                          Check configuration files and processes for problems"
@@ -420,7 +420,15 @@ start_bigbluebutton () {
         TOMCAT_SERVICE=$TOMCAT_USER
     fi
 
-    systemctl start $TOMCAT_SERVICE nginx freeswitch $REDIS_SERVICE bbb-apps-akka bbb-fsesl-akka bbb-rap-resque-worker bbb-rap-starter.service bbb-rap-caption-inbox.service $HTML5 $WEBHOOKS $ETHERPAD $PADS $BBB_WEB $BBB_LTI
+    systemctl start $TOMCAT_SERVICE || {
+        echo
+        echo "# Warning: $TOMCAT_SERVICE could not be started. Please, check BBB-LTI or BBB-Demo."
+        echo "#     Run the command:"
+        echo "#       sudo journalctl -u $TOMCAT_SERVICE"
+        echo "#     To better understand the ERROR"
+    }
+
+    systemctl start nginx freeswitch $REDIS_SERVICE bbb-apps-akka bbb-fsesl-akka bbb-rap-resque-worker bbb-rap-starter.service bbb-rap-caption-inbox.service $HTML5 $WEBHOOKS $ETHERPAD $PADS $BBB_WEB $BBB_LTI
 
     if [ -f /usr/lib/systemd/system/bbb-html5.service ]; then
         systemctl start mongod
@@ -658,8 +666,10 @@ fi
 
 if [[ $SECRET ]]; then
     need_root
-    if get_properties_value securitySalt "$BBB_WEB_ETC_CONFIG" > /dev/null ; then
-        change_var_salt "$BBB_WEB_ETC_CONFIG" securitySalt "$SECRET"
+
+    echo "Assigning secret in $BBB_WEB_ETC_CONFIG"
+    if [ -f "$BBB_WEB_ETC_CONFIG" ] && grep "^securitySalt" "$BBB_WEB_ETC_CONFIG" > /dev/null ; then
+        change_var_value "$BBB_WEB_ETC_CONFIG" securitySalt "$SECRET"
     else
         echo "securitySalt=$SECRET" >> "$BBB_WEB_ETC_CONFIG"
     fi
@@ -716,7 +726,7 @@ check_configuration() {
         if [ ! -f $file ]; then
             echo "# Error: File not found: $file"
         else
-            if cat $file | grep -v redis.pass | grep -v redisPassword  | grep -q "^[^=]*=[ ]*$"; then
+            if cat $file | grep -v redis.pass | grep -v redisPassword  | grep -v ^# | grep -q "^[^=]*=[ ]*$"; then
                 echo "# The following properties in $file have no value:"
                 echo "#     $(grep '^[^=#]*=[ ]*$' $file | grep -v redis.pass | grep -v redisPassword | sed 's/=//g')"
             fi
@@ -864,26 +874,6 @@ check_configuration() {
 
 }
 
-update_gstreamer() {
-    # due to a change in the kurento packages naming convention, gstreamer packages don't naturally upgrade
-    # this snippet checks if the installed gstreamer packages are the same as the one available in the repository
-    # if they are not, it will update (possibly downgrade)
-    # TODO remove it on 2.3 or above
-    if [ "$DISTRIB_CODENAME" == "xenial" ]; then
-        DOWNGRADE_LIST=""
-        for PACKAGE in $(dpkg -l | grep gst | tr -s ' ' | cut -d' ' -f2 | cut -d':' -f1); do
-            RIGHT_VERSION=$(apt-cache policy $PACKAGE | grep -B1 ubuntu.bigbluebutton.org | head -n1 | tr -s ' ' | cut -d' ' -f2)
-            if [[ $RIGHT_VERSION != "***" ]] && [[ $RIGHT_VERSION != "" ]]; then
-                echo "Force $PACKAGE to version $RIGHT_VERSION"
-                DOWNGRADE_LIST="$PACKAGE=$RIGHT_VERSION $DOWNGRADE_LIST"
-            fi
-        done
-        if [[ $DOWNGRADE_LIST != "" ]]; then
-            apt-get -y --allow-downgrades install $DOWNGRADE_LIST > /dev/null
-        fi
-    fi
-}
-
 check_state() {
     echo
     print_header
@@ -912,7 +902,7 @@ check_state() {
         RUNNING_APPS="${RUNNING_APPS} Nginx"
     fi
 
-    if ! netstat -ant | grep '8090' > /dev/null; then
+    if ! ss -ant | grep '8090' > /dev/null; then
         print_header
         NOT_RUNNING_APPS="${NOT_RUNNING_APPS} ${TOMCAT_USER} or grails"
     else
@@ -1025,7 +1015,7 @@ check_state() {
     # Check if the user is running their own bbb-web
     #
     if grep -q 8888 /usr/share/bigbluebutton/nginx/web.nginx; then
-        if ! netstat -ant | grep '8888' > /dev/null; then
+        if ! ss -ant | grep '8888' > /dev/null; then
             echo "# Warning: There is no application server listening to port 8888."
             echo
         fi
@@ -1151,10 +1141,19 @@ check_state() {
     fi
 
     if bbb-conf --status | grep -q inactive; then
-        echo "# Error: Detected some processes have not started correctly"
-        echo "#"
-        echo "#   $(bbb-conf --status | grep inactive)"
-        echo "#"
+
+        if bbb-conf --status | grep -q tomcat9; then
+            echo "# Warning: $TOMCAT_SERVICE is not started correctly"
+            echo "#"
+            echo "#   $(bbb-conf --status | grep inactive | grep $TOMCAT_SERVICE)"
+            echo "#"
+        fi
+        if bbb-conf --status | grep inactive | grep -vq tomcat9; then
+            echo "# Error: Detected some processes have not started correctly"
+            echo "#"
+            echo "#   $(bbb-conf --status | grep inactive | grep -v $TOMCAT_SERVICE)"
+            echo "#"
+        fi
     fi
 
     if systemctl status freeswitch | grep -q SETSCHEDULER; then
@@ -1257,7 +1256,7 @@ check_state() {
       echo "#"
     fi
 
-    FREESWITCH_SIP=$(netstat -anlt | grep :5066 | grep -v tcp6 | grep LISTEN | sed 's/ [ ]*/ /g' | cut -d' ' -f4 | sed 's/:5066//g')
+    FREESWITCH_SIP=$(ss -anlt4 | grep :5066 | grep -v tcp6 | grep LISTEN | sed 's/ [ ]*/ /g' | cut -d' ' -f4 | sed 's/:5066//g')
     KURENTO_SIP=$(echo "$KURENTO_CONFIG" | yq r - freeswitch.sip_ip)
     
     if [ ! -z "$FREESWITCH_SIP" ]; then
@@ -1294,19 +1293,6 @@ check_state() {
           fi
         fi
       done
-    fi
-
-    stunServerAddress=$(cat /etc/kurento/modules/kurento/WebRtcEndpoint.conf.ini | sed -n '/^stunServerAddress/{s/.*=//;p}')
-    stunServerPort=$(cat /etc/kurento/modules/kurento/WebRtcEndpoint.conf.ini | sed -n '/^stunServerPort/{s/.*=//;p}')
-    if [ ! -z "$stunServerAddress" ]; then
-      if stunclient --mode full --localport 30000 $stunServerAddress $stunServerPort | grep -q "fail\|Unable\ to\ resolve"; then
-        echo
-        echo "#"
-        echo "# Warning: Failed to verify STUN server at $stunServerAddress:$stunServerPort with command"
-        echo "#"
-        echo "#    stunclient --mode full --localport 30000 $stunServerAddress $stunServerPort"
-        echo "#"
-      fi
     fi
 
     BBB_LOG="/var/log/bigbluebutton"
@@ -1476,14 +1462,6 @@ if [ $CHECK ]; then
        done
      fi
 
-     stunServerAddress=$(cat /etc/kurento/modules/kurento/WebRtcEndpoint.conf.ini | sed -n '/^stunServerAddress/{s/.*=//;p}')
-     stunServerPort=$(cat /etc/kurento/modules/kurento/WebRtcEndpoint.conf.ini | sed -n '/^stunServerPort/{s/.*=//;p}')
-     if [ ! -z "$stunServerAddress" ]; then
-        echo
-        echo "/etc/kurento/modules/kurento/WebRtcEndpoint.conf.ini (STUN Server)"
-        echo "                              stun: $stunServerAddress:$stunServerPort"
-     fi
-
      check_state
      echo
 
@@ -1633,7 +1611,12 @@ if [ -n "$HOST" ]; then
     if [ -f "$BBB_WEB_ETC_CONFIG" ] && grep "bigbluebutton.web.serverURL" "$BBB_WEB_ETC_CONFIG" > /dev/null ; then
         change_var_value "$BBB_WEB_ETC_CONFIG" bigbluebutton.web.serverURL "$PROTOCOL://$HOST"
     else
-        echo "bigbluebutton.web.serverURL=$PROTOCOL://$HOST" > "$BBB_WEB_ETC_CONFIG"
+        echo "bigbluebutton.web.serverURL=$PROTOCOL://$HOST" >> "$BBB_WEB_ETC_CONFIG"
+    fi
+
+    # Populate /etc/bigbluebutton/bbb-web.properites with the shared secret
+    if ! grep -q "^securitySalt" "$BBB_WEB_ETC_CONFIG"; then
+        echo "securitySalt=$(get_bbb_web_config_value securitySalt)" >> "$BBB_WEB_ETC_CONFIG"
     fi
 
 
@@ -1740,8 +1723,6 @@ String BigBlueButtonURL = \"$BBB_WEB_URL/bigbluebutton/\";
 
     echo "Restarting the BigBlueButton $BIGBLUEBUTTON_RELEASE ..."
     stop_bigbluebutton
-    update_gstreamer
-    echo
     start_bigbluebutton
 
     exit 0
@@ -1755,7 +1736,6 @@ if [ $RESTART ]; then
     echo "Restarting BigBlueButton $BIGBLUEBUTTON_RELEASE ..."
 
     stop_bigbluebutton
-    update_gstreamer
     start_bigbluebutton
     check_state
 fi
@@ -1767,7 +1747,6 @@ if [ $CLEAN ]; then
     echo "Restarting BigBlueButton $BIGBLUEBUTTON_RELEASE (and cleaning out all log files) ..."
 
     stop_bigbluebutton
-    update_gstreamer
 
     #
     # Clean log files
@@ -1845,11 +1824,11 @@ if [ $CLEAN ]; then
 fi
 
 if [ $NETWORK ]; then
-    netstat -ant | egrep ":80|:443\ " | egrep -v ":::|0.0.0.0" > /tmp/t_net
+    ss -ant | egrep ":80|:443\ " | egrep -v ":::|0.0.0.0" > /tmp/t_net
     REMOTE=$(cat /tmp/t_net | cut -c 45-68 | cut -d ":" -f1 | sort | uniq)
 
     if [ "$REMOTE" != "" ]; then
-        echo -e "netstat\t\t\t80\t443"
+        echo -e "ss\t\t\t80\t443"
         for IP in $REMOTE ; do
             PORT_80=$(cat /tmp/t_net | grep :80 | cut -c 45-68 | cut -d ":" -f1 | grep $IP | wc -l )
             PORT_443=$(cat /tmp/t_net | grep :443 | cut -c 45-68 | cut -d ":" -f1 | grep $IP | wc -l )
